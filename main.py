@@ -7,8 +7,8 @@ import FinanceDataReader as fdr
 import pandas, numpy, datetime, calendar, os, glob, random, multiprocessing, threading, math
 from time import sleep
 
+dt_down()
 etf_list = pandas.read_excel(str(max(glob.iglob('data_*.xlsx'), key=os.path.getctime)), index_col=0)
-# 열 정보
 # 0: 표준코드 1: 단축코드 2: 한글종목명 3: 한글종목약명 4: 영문종목명 5: 상장일 6: 기초지수명 7: 지수산출기관 8: 추적배수 9: 복제방법 10: 기초시장분류 11: 기초자산분류 12: 상장좌수 13: 운용사 14: CU수량 15: 총보수 16: 과세유형
 
 etf_list = etf_list.drop(etf_list[etf_list['추적배수'] != '일반 (1)'].index) # 1배 추종 이외 제거
@@ -104,12 +104,12 @@ three_year_sdt = AHP(save[:,3], way='small')
 one_year_earning_rate = AHP(save[:,4])
 one_year_sdt = AHP(save[:,5], way='small')
 
-pandas.DataFrame(five_year_earning_rate).to_excel("a.xlsx", index = False)
+'''pandas.DataFrame(five_year_earning_rate).to_excel("a.xlsx", index = False)
 pandas.DataFrame(five_year_sdt).to_excel("b.xlsx", index = False)
 pandas.DataFrame(three_year_earning_rate).to_excel("c.xlsx", index = False)
 pandas.DataFrame(three_year_sdt).to_excel("d.xlsx", index = False)
 pandas.DataFrame(one_year_earning_rate).to_excel("e.xlsx", index = False)
-pandas.DataFrame(one_year_sdt).to_excel("f.xlsx", index = False)
+pandas.DataFrame(one_year_sdt).to_excel("f.xlsx", index = False)'''
 
 five_year_earning_rate_score = AHP_score(five_year_earning_rate)
 five_year_sdt_score = AHP_score(five_year_sdt)
@@ -144,13 +144,14 @@ one_year_sdt_score = one_year_sdt_score * sdt[0]
 three_year_sdt_score = three_year_sdt_score * sdt[1]
 five_year_sdt_score = five_year_sdt_score * sdt[2]
 
-final_score = one_year_earning_rate_score + one_year_sdt_score + three_year_earning_rate_score + three_year_sdt_score + five_year_earning_rate_score + five_year_sdt_score
 
 #종목 구하기
-etf_list["score"] = final_score
+etf_list["최종 점수"] = one_year_earning_rate_score + one_year_sdt_score + three_year_earning_rate_score + three_year_sdt_score + five_year_earning_rate_score + five_year_sdt_score
+etf_list["수익성 점수"] = one_year_earning_rate_score + three_year_earning_rate_score + five_year_earning_rate_score
+etf_list["표준편차 점수"] = one_year_sdt_score + three_year_sdt_score + five_year_sdt_score
 #etf_list.sort_values(by=["score"], axis=0, ascending=False, inplace=True)
 
-final_dt = etf_list[["단축코드", "한글종목약명", "score"]]
+final_dt = etf_list[["단축코드", "한글종목약명", "최종 점수", "수익성 점수", "표준편차 점수"]]
 final_dt.to_excel("result\end.xlsx")
 
 
