@@ -5,7 +5,7 @@
 + 점수 얻기
   + AHP_score(※선호도표※)
 + 일관성 검증
-  + AHP_const_ratio(AHP_const_index(AHP_const(AHP_score(※선호도표※), ※선호도표※)), AHP_random_const_index(len(※선호도표※))) <= 0.1   
+  + AHP_const_ratio(AHP_const_index(AHP_const(AHP_score(※선호도표※), ※선호도표※)), AHP_RI(len(※선호도표※))) <= 0.1   
 
 로 손쉽게 분석적 계층화 과정를 진행할 수 있습니다.
 
@@ -21,8 +21,9 @@
   + AHP_const(): 함수 AHP()로 만든 선호도 표와 함수 AHP_score()로 만든 점수표를 입력 받아 일관성 척도를 구합니다.
   + AHP_const_index(): 일관성 척도를 입력 받아 일관성 지수(CI; Consistency Index)를 구합니다.
   + AHP_const_ratio(): 일관성 지수와 무작위 일관성 지수(RI; Random Consistency Index)로 일관성 비율(CI; Consistency Ratio)를 구합니다.
-  + AHP_random_const_index(): 대안 개수를 입력 받아 무작위 일관성 지수를 구합니다. ※완성 안 됨.
-  + AHP_random_const_index_inside(): 함수 AHP_random_const_index()에서 병렬 처리를 하려고 쓰는 함수입니다.
+  + AHP_RI():  대안 개수를 입력 받아 무작위 일관성 지수를 구합니다.
+  + AHP_random_const_index(): 무작위 일관성 지수 계산 병렬 처리를 관리합니다.
+  + AHP_random_const_index_inside(): 무작위 일관성 계산을 병렬 처리하는 함수입니다.
 
 + download_ETF_data.py
   + dt_down(): 한국거래소에서 상장 지수 기금 정보를 엑셀로 내려받는 함수입니다. 셀레니움(selenium)에서 구글 크롬(Google Chrome)을 사용합니다.
