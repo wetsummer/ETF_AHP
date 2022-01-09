@@ -190,7 +190,7 @@ def AHP_RI(n): #무작위 일관성 지수 획득(입력: 대안 개수)
 
     return x
 
-def AHP_random_const_index(n, num, cpu, sd): #무작위 일관성 지수 획득(입력: 대안 개수, 작업 당 처리할 표본 개수, 난수 씨앗)
+def AHP_random_const_index(n, num, cpu, sd): #무작위 일관성 지수 획득(입력: 대안 개수, 작업 당 처리할 표본 개수, 처리기 개수, 난수 씨앗)
     cpu = cpu * 4 #다중처리 개수
     mt = [None] * cpu
     mt_result = [None] * cpu
