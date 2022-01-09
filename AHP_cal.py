@@ -1,4 +1,4 @@
-﻿import pandas, numpy, datetime, calendar, os, glob, random, multiprocessing, threading, math
+import pandas, numpy, datetime, calendar, os, glob, random, multiprocessing, threading, math, time
 
 def return_val_date(table, year, month, day=1, way='go', deep=0): #가장 근처 거래일 찾기(입력: 거래 자료, 기준년, 기준 월, 기준일, 방향(go: 미래로, back: 과거로), 재귀 깊이)
     if deep > 20:
@@ -143,10 +143,9 @@ def get_smallest_num_biggrt_then_zero(): #0보다 큰 가장 작은 양수. 0으
         th += 1
     
     smallest= 1
-    for i in range(th - 2):
+    for i in range(th - 1):
         smallest /= 10
 
-    print(smallest == 0)
     return smallest
 
 def AHP_const(A, score): #일관성 척도 얻기(입력: 선호도 표, 점수표)
@@ -165,28 +164,53 @@ def AHP_const_index(A): #일관성 지수 얻기(입력: 일관성 척도)
 def AHP_const_ratio(ci, ri): #일관성 비율 얻기(입력: 일관성 지수, 무작위 일관성 지수)
     return ci/ri
 
-def AHP_random_const_index(n): #무작위 일관성 지수 획득(입력: 대안 개수)
-    cpu = os.cpu_count() * 2 #다중처리 개수
+def AHP_RI(n): #무작위 일관성 지수 획득(입력: 대안 개수)
+    cpu = os.cpu_count()
+    #num =  math.ceil(10000/cpu/2)*n
+    num = 1000
+    sqrt_n = 1 #표본 개수의 제곱근
+    z = 2.58 #신뢰구간 99%의 z값
+    x = 0
+    x_tmp = []
+    var = []
+    sigma = 0
+    chk = True
+    samples = []
+    while (round(x+(z*(sigma/sqrt_n)), 2) != round(x-(z*(sigma/sqrt_n)), 2)) or chk:
+        sd = round(random.random() * 100000000000000)
+        samples += AHP_random_const_index(n, num, cpu, sd)
+        #print(len(samples))
+        sqrt_n = math.sqrt(len(samples))
+        x_tmp.append(samples)
+        x = numpy.average(x_tmp) #표본 평균
+        var.append(samples) #표본 분산
+        sigma = numpy.sqrt(numpy.average(var)) #표본 표준편차
+        chk = False
+        #print("신뢰구간 상한: {0} 신뢰구간 하한: {1}".format(x+(z*(sigma/sqrt_n)), x-(z*(sigma/sqrt_n))))
+
+    return x
+
+def AHP_random_const_index(n, num, cpu, sd): #무작위 일관성 지수 획득(입력: 대안 개수, 작업 당 처리할 표본 개수, 난수 씨앗)
+    cpu = cpu * 4 #다중처리 개수
     mt = [None] * cpu
     mt_result = [None] * cpu
-    num = n*1000
     for i in range(cpu):
-        mt[i] = threading.Thread(target=AHP_random_const_index_inside, args=(n, num, i, mt_result), daemon = True)
+        mt[i] = threading.Thread(target=AHP_random_const_index_inside, args=(n, num, sd, i, mt_result), daemon = True)
         mt[i].start()
     
     for i in range(cpu):
         mt[i].join()
     
-    #save = numpy.sum(numpy.array(mt_result, dtype=numpy.float64))
-    save = numpy.array(mt_result, dtype=numpy.float64).reshape(-1)
+    #save = numpy.sum(mt_result)
+    save = numpy.array(mt_result, dtype=numpy.float64).reshape(-1).tolist()
     #print(ran)
     #return save/num
-    return save, num*cpu
+    return save
 
-def AHP_random_const_index_inside(n, num, ind, result): #무작위 일관성 지수 계산(입력: 대안 개수, 계산할 개수, 병렬처리 번호, 결과 저장 변수)
+def AHP_random_const_index_inside(n, num, sd, ind, result): #무작위 일관성 지수 계산(입력: 대안 개수, 계산할 개수, 난수 씨앗, 병렬처리 번호, 결과 저장 변수)
     save = []
     possible = [1, 2, 3, 4, 5, 6, 7, 8, 9, 1/1, 1/2, 1/3, 1/4, 1/5, 1/6, 1/7, 1/8, 1/9]
-    random.seed(ind * ind)
+    random.seed(sd)
 
     for i in range(num):
         maxt = numpy.zeros(shape=(n,n))
@@ -203,21 +227,12 @@ def AHP_random_const_index_inside(n, num, ind, result): #무작위 일관성 지
                         maxt[y,x] = 1/maxt[x,y]
         #save += AHP_const_index(AHP_const(maxt, AHP_score(maxt)))
         save.append(AHP_const_index(AHP_const(maxt, AHP_score(maxt))))
+        #print(i)
 
     result[ind] = save
 
 if __name__=="__main__":
-    '''a, n = (AHP_random_const_index(8)) #표본, 표본 개수 반환
-
-    import matplotlib.pyplot as plt
-    
-    x = numpy.average(a) #표본 평균
-    sigma = numpy.std(a) #표본 표준편차
-    z = 2.58 #신뢰구간 99%의 z값
-    sqrt_n = math.sqrt(n) #표본 개수의 제곱근
-
-    print("신뢰구간 상한: {0} 신뢰구간 하한: {1}".format(x+(z*(sigma/sqrt_n)), x-(z*(sigma/sqrt_n))))'''
-
-    a = numpy.array([[1,1/5,1/9,1],[5,1,1,5],[9,1,1,5],[1,1/5,1/5,1]])
+    print(AHP_RI(8)) #표본, 표본 개수 반환
+    '''a = numpy.array([[1,1/5,1/9,1],[5,1,1,5],[9,1,1,5],[1,1/5,1/5,1]])
     a = AHP_const_ratio(AHP_const_index(AHP_const(a, AHP_score(a))), 0.9)
-    print(a)
+    print(a)'''
