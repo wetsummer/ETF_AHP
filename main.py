@@ -149,11 +149,23 @@ five_year_sdt_score = five_year_sdt_score * sdt[2]
 etf_list["최종 점수"] = one_year_earning_rate_score + one_year_sdt_score + three_year_earning_rate_score + three_year_sdt_score + five_year_earning_rate_score + five_year_sdt_score
 etf_list["수익성 점수"] = one_year_earning_rate_score + three_year_earning_rate_score + five_year_earning_rate_score
 etf_list["표준편차 점수"] = one_year_sdt_score + three_year_sdt_score + five_year_sdt_score
-#etf_list.sort_values(by=["score"], axis=0, ascending=False, inplace=True)
 
-final_dt = etf_list[["단축코드", "한글종목약명", "최종 점수", "수익성 점수", "표준편차 점수"]]
-final_dt.to_excel("result\end.xlsx")
+etf_list.sort_values(by=["최종 점수"], axis=0, ascending=False, inplace=True) #점수 대로 정렬
+etf_list = etf_list.reset_index()
 
+final_dt = etf_list[["단축코드", "한글종목약명", "최종 점수", "수익성 점수", "표준편차 점수", "기초지수명"]]
+final_dt.to_excel("end.xlsx", index=False)
+
+#지수 중복 제거(종합점수가 가장 높은 것만 남김)
+lt = list(set(etf_list['기초지수명'])) #지수 목록
+print(lt)
+print
+for i in range(len(lt)):
+    duplicated = etf_list[etf_list['기초지수명'] == lt[i]].index
+    if len(duplicated) >= 1:
+        etf_list = etf_list.drop(duplicated[1:])
+
+final_dt.to_excel("end_without_dup.xlsx", index=False)
 
 '''with pandas.ExcelWriter('result\AHP2.xlsx') as writer:
     pandas.DataFrame(five_year_earning_rate).to_excel(writer, sheet_name='sheet1', index=False, header=False)
