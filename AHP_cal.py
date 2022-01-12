@@ -171,22 +171,28 @@ def AHP_RI(n): #무작위 일관성 지수 획득(입력: 대안 개수)
     sqrt_n = 1 #표본 개수의 제곱근
     z = 2.58 #신뢰구간 99%의 z값
     x = 0
-    var = []
+    var = 0
     sigma = 0
     chk = 0
     samples = []
     while (round(x+(z*(sigma/sqrt_n)), 2) != round(x-(z*(sigma/sqrt_n)), 2)) or not chk:
         sd = round(random.random() * 100000000000000)
-        samples += AHP_random_const_index(n, num, cpu, sd)
+        samples = AHP_random_const_index(n, num, cpu, sd)
         #print(len(samples))
-        sqrt_n = math.sqrt(len(samples))
+        sqrt_n = math.sqrt(num*chk+num)
         x_tmp = numpy.average(samples)
         if x == 0:
             x = x_tmp #표본 평균
         else:
-            x = x*(chk/(chk+1))+(x_tmp/(chk+1))
-        var.append(numpy.var(samples)) #표본 분산
-        sigma = numpy.sqrt(numpy.average(var)) #표본 표준편차
+            x = x*(chk/(chk+1))+(x_tmp/(chk+1)) #표본 평균
+        
+        var_tmp = numpy.var(samples)
+        if var == 0:
+            var = var_tmp #표본 분산
+        else:
+            var = var*(chk/(chk+1))+(var_tmp/(chk+1)) #표본 분산
+            
+        sigma = numpy.sqrt(var) #표본 표준편차
         chk += 1
         #print("신뢰구간 상한: {0} 신뢰구간 하한: {1}".format(x+(z*(sigma/sqrt_n)), x-(z*(sigma/sqrt_n))))
 
