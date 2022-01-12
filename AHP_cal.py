@@ -186,13 +186,9 @@ def AHP_RI(n): #무작위 일관성 지수 획득(입력: 대안 개수)
         else:
             x = x*(chk/(chk+1))+(x_tmp/(chk+1)) #표본 평균
         
-        var_tmp = numpy.var(samples)
-        if var == 0:
-            var = var_tmp #표본 분산
-        else:
-            var = var*(chk/(chk+1))+(var_tmp/(chk+1)) #표본 분산
+        sigma_tmp += samples
             
-        sigma = numpy.sqrt(var) #표본 표준편차
+        sigma = numpy.std(sigma_tmp) #표본 표준편차
         chk += 1
         #print("신뢰구간 상한: {0} 신뢰구간 하한: {1}".format(x+(z*(sigma/sqrt_n)), x-(z*(sigma/sqrt_n))))
 
