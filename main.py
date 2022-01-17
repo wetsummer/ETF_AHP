@@ -1,7 +1,7 @@
 # It requires 'pandas_datareader' and 'openpyxl'
 from pandas.core.indexes.base import Index
 from download_ETF_data import dt_down
-from AHP_cal import return_val_date, AHP, AHP_score, AHP_const, AHP_const_index, AHP_const_ratio, AHP_random_const_index, AHP_random_const_index_inside
+from AHP_cal import return_val_date, AHP, AHP_score, AHP_const, AHP_const_index, AHP_const_ratio, AHP_RI, AHP_random_const_index, AHP_random_const_index_inside, log_mse
 import pandas_datareader.data as web
 import FinanceDataReader as fdr
 import pandas, numpy, datetime, calendar, os, glob, random, multiprocessing, threading, math
@@ -25,7 +25,7 @@ else:
 
 start_date = datetime.datetime.strptime(str(start_date_years) + '-' + str(start_date_months) + '-' + '1', '%Y-%m-%d').date()
 
-untimed = etf_list[pandas.to_datetime(etf_list['상장일'], format='%Y-%m-%d') > pandas.to_datetime(start_date, format='%Y-%m-%d')].index
+untimed = etf_list[pandas.to_datetime(etf_list['상장일'], format='%Y/%m/%d') > pandas.to_datetime(start_date, format='%Y-%m-%d')].index
 etf_list = etf_list.drop(untimed)
 etf_list = etf_list.reset_index()
 # 상장된지 5년 지난 것만 남기기 끝
@@ -39,7 +39,7 @@ code_list = etf_list['단축코드'].tolist() # 부호 얻기
 end_date = datetime.datetime.strptime(str(start_date.year + 5) + '-' + str(start_date.month) + '-' + str(last_day), '%Y-%m-%d').date()
 
 etf_num = len(code_list)
-save = numpy.empty(shape=(etf_num,6))
+save = numpy.empty(shape=(etf_num,7))
 for code, num in zip(code_list, range(etf_num)):
     price = fdr.DataReader(str(code), start_date, end_date)
 
@@ -58,6 +58,7 @@ for code, num in zip(code_list, range(etf_num)):
             save[num][0] = last_price / int(price['Close'][str(year) + '-' + str(month) + '-' + str(day)]) - 1 # 5년 수익률
             years_period = price['Close'][(str(year) + '-' + str(month) + '-' + str(day)):]
             save[num][1] = numpy.std((numpy.array(years_period[:-1].astype(int))/numpy.array(years_period[1:].astype(int))).reshape(-1) - 1) # 5년 표준편차
+            save[num][6] = log_mse(years_period) #5년 평균 제곱 오차
 
             (year, month, day) = return_val_date(price, start_date.year + 2, start_date.month)
             save[num][2] = last_price / int(price['Close'][str(year) + '-' + str(month) + '-' + str(day)]) - 1 # 3년 수익률
@@ -76,6 +77,7 @@ for code, num in zip(code_list, range(etf_num)):
             save[num][3] = numpy.nan
             save[num][4] = numpy.nan
             save[num][5] = numpy.nan
+            save[num][6] = numpy.nan
             
     else:
         save[num][0] = numpy.nan
@@ -84,10 +86,20 @@ for code, num in zip(code_list, range(etf_num)):
         save[num][3] = numpy.nan
         save[num][4] = numpy.nan
         save[num][5] = numpy.nan
+        save[num][6] = numpy.nan
+
+    if save[num][0] <= 0: #5년 수익률 음수 제거
+        save[num][0] = numpy.nan
+        save[num][1] = numpy.nan
+        save[num][2] = numpy.nan
+        save[num][3] = numpy.nan
+        save[num][4] = numpy.nan
+        save[num][5] = numpy.nan
+        save[num][6] = numpy.nan
         
     
     print("{0} 완료".format(num + 1))
-    sleep(5)
+    sleep(3)
     #print('{0}: 5년 수익률 {1: .4f} 5년 표준편차 {2: .4f} 3년 수익률 {3: .4f} 3년 표준편차 {4: .4f} 1년 수익률 {5: .4f} 1년 표준편차 {6: .4f}'.format(code, save[num][0], save[num][1], save[num][2], save[num][3], save[num][4], save[num][5]))
 
 row_nan = numpy.where(numpy.isnan(save))[0].tolist()
@@ -104,6 +116,7 @@ three_year_sdt = AHP(save[:,3], way='small')
 one_year_earning_rate = AHP(save[:,4])
 one_year_sdt = AHP(save[:,5], way='small')
 
+five_year_mse = AHP(save[:,6], way='small')
 '''pandas.DataFrame(five_year_earning_rate).to_excel("a.xlsx", index = False)
 pandas.DataFrame(five_year_sdt).to_excel("b.xlsx", index = False)
 pandas.DataFrame(three_year_earning_rate).to_excel("c.xlsx", index = False)
@@ -117,6 +130,8 @@ three_year_earning_rate_score = AHP_score(three_year_earning_rate)
 three_year_sdt_score = AHP_score(three_year_sdt)
 one_year_earning_rate_score = AHP_score(one_year_earning_rate)
 one_year_sdt_score = AHP_score(one_year_sdt)
+
+one_year_mse_score = AHP_score(one_year_sdt)
 
 #RI = AHP_random_const_index(etf_num)
 '''RI = 1.59
@@ -132,8 +147,9 @@ f = AHP_const_ratio(AHP_const_index(AHP_const(one_year_sdt, one_year_sdt_score))
 earn = [[1,3,5],[1/3,1,3],[1/5,1/3,1]]
 sdt = [[1,3,5],[1/3,1,3],[1/5,1/3,1]]
 
-earn = AHP_score(earn)/2
-sdt = AHP_score(sdt)/2
+earn = AHP_score(earn)/3
+sdt = AHP_score(sdt)/3
+one_year_mse_score = one_year_mse_score /3
 
 #최종점수 산출
 one_year_earning_rate_score = one_year_earning_rate_score * earn[0]
@@ -146,19 +162,20 @@ five_year_sdt_score = five_year_sdt_score * sdt[2]
 
 
 #종목 구하기
-etf_list["최종 점수"] = one_year_earning_rate_score + one_year_sdt_score + three_year_earning_rate_score + three_year_sdt_score + five_year_earning_rate_score + five_year_sdt_score
+etf_list["최종 점수"] = one_year_earning_rate_score + one_year_sdt_score + three_year_earning_rate_score + three_year_sdt_score + five_year_earning_rate_score + five_year_sdt_score + one_year_mse_score
 etf_list["수익성 점수"] = one_year_earning_rate_score + three_year_earning_rate_score + five_year_earning_rate_score
 etf_list["표준편차 점수"] = one_year_sdt_score + three_year_sdt_score + five_year_sdt_score
+etf_list["꾸준함 점수"] = one_year_mse_score
 
 etf_list.sort_values(by=["최종 점수"], axis=0, ascending=False, inplace=True) #점수 대로 정렬
 etf_list = etf_list.reset_index()
 
-final_dt = etf_list[["단축코드", "한글종목약명", "최종 점수", "수익성 점수", "표준편차 점수", "기초지수명"]]
+final_dt = etf_list[["단축코드", "한글종목약명", "최종 점수", "수익성 점수", "표준편차 점수", "꾸준함 점수", "기초지수명"]]
 final_dt.to_excel("end.xlsx", index=False)
 
 #지수 중복 제거(종합점수가 가장 높은 것만 남김)
 lt = list(set(etf_list['기초지수명'])) #지수 목록
-print(lt)
+#print(lt)
 print
 for i in range(len(lt)):
     duplicated = etf_list[etf_list['기초지수명'] == lt[i]].index
