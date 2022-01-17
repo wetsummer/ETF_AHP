@@ -24,6 +24,7 @@
   + AHP_RI():  대안 개수를 입력 받아 무작위 일관성 지수를 구합니다.
   + AHP_random_const_index(): 무작위 일관성 지수 계산 병렬 처리를 관리합니다.
   + AHP_random_const_index_inside(): 무작위 일관성 계산을 병렬 처리하는 함수입니다.
+  + log_mse(): 주가 정보를 입력 받아 로그 도표에서 기준선과의 평균 제곱 오차의 제곱근을 구합니다.
 
 + download_ETF_data.py
   + dt_down(): 한국거래소에서 상장 지수 기금 정보를 엑셀로 내려받는 함수입니다. 셀레니움(selenium)에서 구글 크롬(Google Chrome)을 사용합니다.
