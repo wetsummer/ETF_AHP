@@ -173,12 +173,13 @@ def AHP_RI(n): #무작위 일관성 지수 획득(입력: 대안 개수)
     x = 0
     var = 0
     sigma = 0
+    sigma_tmp = []
     chk = 0
     samples = []
     while (round(x+(z*(sigma/sqrt_n)), 2) != round(x-(z*(sigma/sqrt_n)), 2)) or not chk:
         sd = round(random.random() * 100000000000000)
         samples = AHP_random_const_index(n, num, cpu, sd)
-        #print(len(samples))
+        print(len(samples))
         sqrt_n = math.sqrt(num*chk+num)
         x_tmp = numpy.average(samples)
         if x == 0:
@@ -190,7 +191,7 @@ def AHP_RI(n): #무작위 일관성 지수 획득(입력: 대안 개수)
             
         sigma = numpy.std(sigma_tmp) #표본 표준편차
         chk += 1
-        #print("신뢰구간 상한: {0} 신뢰구간 하한: {1}".format(x+(z*(sigma/sqrt_n)), x-(z*(sigma/sqrt_n))))
+        print("신뢰구간 상한: {0} 신뢰구간 하한: {1}".format(x+(z*(sigma/sqrt_n)), x-(z*(sigma/sqrt_n))))
 
     return x
 
@@ -235,8 +236,20 @@ def AHP_random_const_index_inside(n, num, sd, ind, result): #무작위 일관성
 
     result[ind] = save
 
+def log_mse(dt): #로그차트의 기준선(첫 거래일의 가격의 로그값~마지막 거래일의 가격의 로그값을 이은 선)을 사용한 평균 제곱 오차의 제곱근
+    width = len(dt)
+    height = math.log10(dt[-1]) - math.log10(dt[0])
+    gradient = height / width #기울기
+    y_intercept = math.log10(dt[0]) #y절편(시점 0의 주가 로그값)
+    y = 0
+
+    for i in range(width):
+        y += math.pow(math.log10(dt[i]) - (i * gradient + y_intercept), 2) / width
+
+    return y
+
 if __name__=="__main__":
-    print(AHP_RI(8)) #표본, 표본 개수 반환
+    print(AHP_RI(5)) #표본, 표본 개수 반환
     '''a = numpy.array([[1,1/5,1/9,1],[5,1,1,5],[9,1,1,5],[1,1/5,1/5,1]])
     a = AHP_const_ratio(AHP_const_index(AHP_const(a, AHP_score(a))), 0.9)
     print(a)'''
